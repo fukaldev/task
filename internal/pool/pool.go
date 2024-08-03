@@ -21,6 +21,7 @@ func NewPool(poolSize int, appName string, tasks *map[string]taskdef.Callable) *
 }
 
 func (p *Pool) CreatePool(wg *sync.WaitGroup) {
+	wg.Add(p.poolSize)
 	for i := 0; i < p.poolSize; i++ {
 		go func(id int, appName string) {
 			for {
@@ -28,8 +29,8 @@ func (p *Pool) CreatePool(wg *sync.WaitGroup) {
 				fmt.Printf("Task %d starting to run given function\n", id)
 				// task.Call()
 				fmt.Printf("Task %d finished\n", id)
-				wg.Done()
 			}
+			wg.Done()
 		}(i, p.appName)
 	}
 }
