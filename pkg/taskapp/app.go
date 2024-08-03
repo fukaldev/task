@@ -5,6 +5,7 @@ import (
 
 	"github.com/fukaldev/task/internal/pool"
 	"github.com/fukaldev/task/pkg/taskdef"
+	"github.com/redis/go-redis/v9"
 )
 
 type App struct {
@@ -26,7 +27,13 @@ func (a *App) RegisterTask(id string, task taskdef.Callable) {
 }
 
 func (a *App) Start() {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	wg := sync.WaitGroup{}
-	a.pool.CreatePool(&wg)
+	a.pool.CreatePool(&wg, rdb)
 	wg.Wait()
 }
