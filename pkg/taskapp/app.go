@@ -18,7 +18,7 @@ func NewApp(appName string, threadCount int) *App {
 	app := new(App)
 	app.appName = appName
 	app.tasks = make(map[string]taskdef.Callable)
-	app.pool = *pool.NewPool(threadCount, appName, &app.tasks)
+	app.pool = *pool.NewPool(threadCount, appName, app.tasks)
 	return app
 }
 

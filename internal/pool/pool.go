@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/fukaldev/task/pkg/taskdef"
 	"github.com/redis/go-redis/v9"
@@ -13,10 +14,10 @@ import (
 type Pool struct {
 	poolSize int
 	appName  string
-	tasks    *map[string]taskdef.Callable
+	tasks    map[string]taskdef.Callable
 }
 
-func NewPool(poolSize int, appName string, tasks *map[string]taskdef.Callable) *Pool {
+func NewPool(poolSize int, appName string, tasks map[string]taskdef.Callable) *Pool {
 	pool := new(Pool)
 	pool.poolSize = poolSize
 	pool.tasks = tasks
@@ -32,14 +33,20 @@ func (p *Pool) CreatePool(wg *sync.WaitGroup, taskQueue *redis.Client) {
 				fmt.Printf("Task %d is ready\n", id)
 				ctx := context.Background()
 				for {
-					receivedTask, err := taskQueue.BRPop(ctx, 1<<63-1, p.appName).Result()
+					receivedTask, err := taskQueue.BRPop(ctx, time.Hour*3, p.appName).Result()
 					if err != nil {
 						wg.Done()
 						log.Fatal("failed to read task:", err)
 					}
-					fmt.Printf("Task %d starting to run given function\n", id)
-					fmt.Println("Received task", receivedTask)
-					fmt.Printf("Task %d finished\n", id)
+					fmt.Println("Received task", receivedTask[1])
+					if callable, ok := p.tasks[receivedTask[1]]; !ok {
+						fmt.Println("task", receivedTask[1], "not found")
+						continue
+					} else {
+						fmt.Printf("Task %d starting to run given function\n", id)
+						callable.Call()
+						fmt.Printf("Task %d finished\n", id)
+					}
 				}
 			}
 		}(i, p.appName)
